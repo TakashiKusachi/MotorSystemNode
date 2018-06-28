@@ -1,7 +1,10 @@
 <launch>
 	<group ns="can0">
-		<node name="bridge" pkg="socketcan_bridge" type="topic_to_socketcan_node">
+		<node name="sent_bridge" pkg="socketcan_bridge" type="topic_to_socketcan_node">
 			<remap from="/can0/sent_messages" to="/can0/sent" />
+		</node>
+		<node name="receive_bridge" pkg="socketcan_bridge" type="socketcan_to_topic_node">
+			<remap from="/can0/received_messages" to="/can0/receive" />
 		</node>
 	</group>
 	<node ns="ms1" name="test" pkg="motor_system" type="motor_system" />
