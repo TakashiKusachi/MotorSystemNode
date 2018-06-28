@@ -70,7 +70,7 @@ private:
 	}
 	void _send_velocity(float vel);
 	void _send_begin();
-
+	void _send_msg(unsigned short,bool,unsigned char,unsigned char*);
 public:
 	MotorSystem(unsigned char);
 
@@ -111,7 +111,7 @@ void MotorSystem::SetVelocity(const motor_system::velocity vel)
 
 void MotorSystem::CatchMsg(const can_msgs::Frame msg)
 {
-	if(!this->is_my_message(msg))return 0;
+	if(!this->is_my_message(msg))return ;
 	switch(msg.id >> 4){
 	case BEGIN:
 		this->state = RUNNING;
@@ -132,7 +132,7 @@ void MotorSystem::Process(const ros::TimerEvent& e)
 
 void MotorSystem::RunningProcess(void)
 {
-	_senf_velocity(this->velocity);
+	_send_velocity(this->velocity);
 }
 
 void MotorSystem::_send_begin(void)
@@ -146,7 +146,7 @@ void MotorSystem::_send_velocity(float velocity)
 		struct{
 			float f;
 			float dumy;
-		}
+		};
 		unsigned char c[8];
 	}Convter;
 	Convter.f = velocity;
@@ -161,7 +161,7 @@ void MotorSystem::_send_msg(unsigned short id,bool rtr,unsigned char dlc,unsigne
 	msg.is_extended = false;
 	msg,dlc = dlc;
 	for (int i=0;i < dlc;i++){
-		msg.data[i] = data[i]
+		msg.data[i] = data[i];
 	}
 	sent_can_bus.publish(msg);
 }
@@ -170,12 +170,12 @@ int main(int argc,char **argv)
 {
 	ros::init(argc,argv,"motor_system");
 	ros::NodeHandle nh("~");
-	unsigned char id;
+	int id;
 	if(!nh.getParam("id",id)){
 		ROS_ERROR_STREAM("ID is not setting.");
 		return -1;
 	}
-	MotorSystem motor(std::stoi(id));
+	MotorSystem motor(id);
 	ros::spin();
 	return 0;
 }
