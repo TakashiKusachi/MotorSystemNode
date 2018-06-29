@@ -11,10 +11,12 @@ private:
 	unsigned char id;
 	float velocity;
 
+	struct{
+		bool Begined:1;
+	}Flags;
+
 	enum{
 		INIT,
-		BEGIN_WAIT,
-		WAIT,
 		RUNNING,
 	}state;
 	
@@ -63,7 +65,6 @@ private:
 	ros::Publisher sent_can_bus;
 	ros::Subscriber receive_can_bus;
 	
-	ros::Timer timer;
 private:
 	bool is_my_message(can_msgs::Frame msg){
 		return (msg.id & 0x0f) == id;
@@ -73,14 +74,17 @@ private:
 	void _send_msg(unsigned short,bool,unsigned char,unsigned char*);
 public:
 	MotorSystem(unsigned char);
+	void begin(void);
 
 	//subscriber callhandle関数
 	void SetVelocity(const motor_system::velocity);
 	void CatchMsg(const can_msgs::Frame);
 
-	//メインタイマーループ
-	void Process(const ros::TimerEvent&);
+	//各状態のメイン処理
+	void InitProcess(void);
 	void RunningProcess(void);
+	
+	bool IsBegined(void);
 };
 
 MotorSystem::MotorSystem(unsigned char _id=0)
@@ -89,55 +93,90 @@ MotorSystem::MotorSystem(unsigned char _id=0)
 	state = INIT;
 	this->id = _id % 0x0f;
 	this->velocity = 0;
+	Flags.Begined = false;
 
 	//ros変数初期化
 	vel_topic = nh.subscribe("SetVelocity",1000,&MotorSystem::SetVelocity,this);
 	sent_can_bus = nh.advertise<can_msgs::Frame>("/can0/sent",1000);
 	receive_can_bus = nh.subscribe("/can0/receive",1000,&MotorSystem::CatchMsg,this);
-	this->timer = nh.createTimer(ros::Duration(0.01),&MotorSystem::Process,this);
 
-	//log出力
-	ROS_INFO_STREAM("MotorSystem Constracter");
-	ROS_INFO_STREAM("Send Begin Message");
-
-	state = BEGIN_WAIT;
-	this->_send_begin();
 }
 
+void MotorSystem::begin(void)
+{
+	//ループ周期を決定
+	ros::Rate loop_rate(100);
+
+	while(ros::ok()){
+
+		//subscribeを呼び出すのに必要な関数。決して自動でハンドラは呼ばれない。
+		ros::spinOnce();
+
+		switch(this->state){
+
+		//初期化状態
+		case INIT:
+			this->InitProcess();
+			if(this->IsBegined())this->state = RUNNING;
+			break;
+
+		//ランニング状態
+		case RUNNING:
+			this->RunningProcess();
+			break;
+		}
+		loop_rate.sleep();
+	}
+}
+
+/*
+//	速度受信ハンドラ。メンバ変数に格納されます。
+*/
 void MotorSystem::SetVelocity(const motor_system::velocity vel)
 {
 	this->velocity = vel.velocity;
 }
 
+/*
+// CANハンドラからの受信。
+// 自分でIDをみてフィルティングしてるのが勿体ないかな？
+// 各命令にしたがい処理をおこなう。
+*/
 void MotorSystem::CatchMsg(const can_msgs::Frame msg)
 {
 	if(!this->is_my_message(msg))return ;
 	switch(msg.id >> 4){
 	case BEGIN:
-		this->state = RUNNING;
+		Flags.Begined=true;
 		break;
 	}
 }
 
-void MotorSystem::Process(const ros::TimerEvent& e)
+void MotorSystem::InitProcess(void)
 {
-	switch(this->state){
-	case BEGIN_WAIT:
-		break;
-	case RUNNING:
-		this->RunningProcess();
-		break;
+	static bool _send_begin_flag = false;
+	
+	if(!_send_begin_flag){
+		this->_send_begin();
 	}
+	return;
 }
 
 void MotorSystem::RunningProcess(void)
 {
 	_send_velocity(this->velocity);
+	return;
+}
+
+bool MotorSystem::IsBegined(void)
+{
+	return Flags.Begined;
 }
 
 void MotorSystem::_send_begin(void)
 {
 	this->_send_msg(this->id | (MotorSystem::BEGIN  << 4),true,0,NULL);
+	return;
 }
 
 void MotorSystem::_send_velocity(float velocity)
@@ -159,10 +198,12 @@ void MotorSystem::_send_msg(unsigned short id,bool rtr,unsigned char dlc,unsigne
 	msg.id = id;
 	msg.is_rtr = rtr;
 	msg.is_extended = false;
-	msg,dlc = dlc;
+	msg.dlc = dlc;
 	for (int i=0;i < dlc;i++){
 		msg.data[i] = data[i];
 	}
+	ROS_INFO_STREAM("send_id "<<id);
+	ROS_INFO_STREAM("send_dlc" <<dlc);
 	sent_can_bus.publish(msg);
 }
 
@@ -170,12 +211,20 @@ int main(int argc,char **argv)
 {
 	ros::init(argc,argv,"motor_system");
 	ros::NodeHandle nh("~");
+	
 	int id;
+	
+	//設定パラメータを取得と判定
 	if(!nh.getParam("id",id)){
 		ROS_ERROR_STREAM("ID is not setting.");
 		return -1;
 	}
+	
 	MotorSystem motor(id);
-	ros::spin();
+	
+	//socketcan_bridgeが起動するのがすこし遅いので待ち。（これ絶対いらないどうにかして）
+	ros::Duration(1).sleep();
+	
+	motor.begin();
 	return 0;
 }
