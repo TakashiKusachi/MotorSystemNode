@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(motor_system)
+project(mekanamu_4)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
  add_compile_options(-std=c++11)
@@ -10,8 +10,6 @@ project(motor_system)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
-  can_msgs
-  
 )
 
 ## System dependencies are found with CMake's conventions
@@ -48,14 +46,15 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-#add_message_files(
-#   DIRECTORY msg FILES velocity.msg
+# add_message_files(
+#   FILES
+#   Message1.msg
 #   Message2.msg
 # )
 
 ## Generate services in the 'srv' folder
- #add_service_files(
- #  FILES
+# add_service_files(
+#   FILES
 #   Service1.srv
 #   Service2.srv
 # )
@@ -69,8 +68,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
-#   DEPENDENCIES
-#   std_msgs
+#   DEPENDENCIES std_msgs motor_system
 # )
 
 ################################################
@@ -104,9 +102,9 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES motor_system
-  CATKIN_DEPENDS roscpp std_msgs can_msgs
-#  DEPENDS system_lib
+  LIBRARIES mekanamu_4
+  CATKIN_DEPENDS roscpp std_msgs
+  DEPENDS system_lib
 )
 
 ###########
@@ -122,7 +120,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/MotorSystem.cpp
+#  src/${PROJECT_NAME}/mekanamu_4.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -149,7 +147,6 @@ include_directories(
  target_link_libraries(${PROJECT_NAME}
    ${catkin_LIBRARIES}
  )
-
 
 #############
 ## Install ##
@@ -191,7 +188,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_MotorSystem.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_mekanamu_4.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

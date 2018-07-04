@@ -1,5 +1,5 @@
 #include<ros/ros.h>
-#include<motor_system/velocity.h>
+#include<std_msgs/Float32.h>
 #include<can_msgs/Frame.h>
 #include<sstream>
 #include<string>
@@ -88,7 +88,7 @@ public:
 	void begin(void);
 
 	//subscriber callhandle関数
-	void SetVelocity(const motor_system::velocity);
+	void SetVelocity(const std_msgs::Float32);
 	void CatchMsg(const can_msgs::Frame);
 
 	//各状態のメイン処理
@@ -144,9 +144,9 @@ void MotorSystem::begin(void)
 /*
 //	速度受信ハンドラ。メンバ変数に格納されます。
 */
-void MotorSystem::SetVelocity(const motor_system::velocity vel)
+void MotorSystem::SetVelocity(const std_msgs::Float32 vel)
 {
-	this->velocity = vel.velocity;
+	this->velocity = vel.data;
 }
 
 /*
