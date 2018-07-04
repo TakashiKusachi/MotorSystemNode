@@ -8,4 +8,13 @@
 	<node ns="ms1" name="test" pkg="motor_system" type="motor_system" >
 		<param name="id" value="8"/>
 	</node>
+	<node ns="ms2" name="test" pkg="motor_system" type="motor_system" >
+		<param name="id" value="4"/>
+	</node>
+	<node ns="ms3" name="test" pkg="motor_system" type="motor_system" >
+		<param name="id" value="2"/>
+	</node>
+	<node ns="ms4" name="test" pkg="motor_system" type="motor_system" >
+		<param name="id" value="1"/>
+	</node>
 </launch>

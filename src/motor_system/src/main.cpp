@@ -9,9 +9,12 @@ class MotorSystem{
 /*	MotorSystem menver	*/
 private:
 	unsigned char id;
+
 	float velocity;
+	float now_velocity;
 
 	struct{
+		bool _send_begin:1;
 		bool Begined:1;
 	}Flags;
 
@@ -57,6 +60,14 @@ private:
 		
 		BEGIN		= 0x44,
 	}MotorSystem_CMD;//ID‚ÌãˆÊ7bit•ª
+
+	typedef union{
+		struct{
+			float f;
+			float dumy;
+		};
+		unsigned char c[8];
+	}FloatConv;
 	
 /*	ROS menber		*/
 private:
@@ -94,6 +105,7 @@ MotorSystem::MotorSystem(unsigned char _id=0)
 	this->id = _id % 0x0f;
 	this->velocity = 0;
 	Flags.Begined = false;
+	Flags._send_begin = false;
 
 	//ros•Ï”‰Šú‰»
 	vel_topic = nh.subscribe("SetVelocity",1000,&MotorSystem::SetVelocity,this);
@@ -105,7 +117,7 @@ MotorSystem::MotorSystem(unsigned char _id=0)
 void MotorSystem::begin(void)
 {
 	//ƒ‹[ƒvŽüŠú‚ðŒˆ’è
-	ros::Rate loop_rate(100);
+	ros::Rate loop_rate(50);
 
 	while(ros::ok()){
 
@@ -144,20 +156,23 @@ void MotorSystem::SetVelocity(const motor_system::velocity vel)
 */
 void MotorSystem::CatchMsg(const can_msgs::Frame msg)
 {
+	FloatConv Convter;
+	float vel = ((FloatConv *)&msg.data[0])->f;
 	if(!this->is_my_message(msg))return ;
 	switch(msg.id >> 4){
 	case BEGIN:
 		Flags.Begined=true;
 		break;
+	case GET_VELOCITY:
+		this->now_velocity = vel;
 	}
 }
 
 void MotorSystem::InitProcess(void)
 {
-	static bool _send_begin_flag = false;
-	
-	if(!_send_begin_flag){
+	if(!Flags._send_begin){
 		this->_send_begin();
+		Flags._send_begin = true;
 	}
 	return;
 }
@@ -181,6 +196,7 @@ void MotorSystem::_send_begin(void)
 
 void MotorSystem::_send_velocity(float velocity)
 {
+	/*
 	union{
 		struct{
 			float f;
@@ -188,6 +204,8 @@ void MotorSystem::_send_velocity(float velocity)
 		};
 		unsigned char c[8];
 	}Convter;
+*/
+	FloatConv Convter;
 	Convter.f = velocity;
 	this->_send_msg(this->id | (MotorSystem::SET_VELOCITY << 4),false,4,Convter.c);
 }
@@ -202,8 +220,8 @@ void MotorSystem::_send_msg(unsigned short id,bool rtr,unsigned char dlc,unsigne
 	for (int i=0;i < dlc;i++){
 		msg.data[i] = data[i];
 	}
-	ROS_INFO_STREAM("send_id "<<id);
-	ROS_INFO_STREAM("send_dlc" <<dlc);
+	//ROS_INFO_STREAM("send_id "<<id);
+	//ROS_INFO_STREAM("send_dlc" <<dlc);
 	sent_can_bus.publish(msg);
 }
 
