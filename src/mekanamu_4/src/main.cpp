@@ -10,9 +10,9 @@ using namespace std;
 
 /*
 	kbhit()
-	$BI8=`F~NO(B(stdin)$B$r%j%"%k%?%$%`(B(RT)$B=hM}$r$9$k$?$a$N%a%C%;!<%83NG'4X?t(B
-	getchar$B$d(Bcin$B$G$O(BEnter$B6h@Z$j$G$d$C$HF~NO$5$l$k$N$G!"%-!<$,2!$5$l$F$$$k$+$I$&$+H=CG$G$-$J$$!#(B
-	$B$3$N4X?t$G$O!"(Bstdin$B$r>/$72C9)$7$F$3$l$i$r$G$-$k$h$&$K$7$F!"%-!<$,$"$l$P#1!"$J$1$l$P#0=PNO$9$k!#(B
+	標準入力(stdin)をリアルタイム(RT)処理をするためのメッセージ確認関数
+	getcharやcinではEnter区切りでやっと入力されるので、キーが押されているかどうか判断できない。
+	この関数では、stdinを少し加工してこれらをできるようにして、キーがあれば１、なければ０出力する。
 http://i2blog.matrix.jp/index.php?UID=1479357418
 */
 int kbhit(void)
@@ -67,7 +67,7 @@ Robot::Robot(void)
 
 void Robot::begin(void)
 {
-	float speed_param=10.0;	//$B%-!<J}8~$X$NB.EY(B
+	float speed_param=10.0;	//キー方向への速度
 	float x_speed;
 	float y_speed;
 
@@ -79,7 +79,7 @@ void Robot::begin(void)
 		else key = getchar();
 		fflush(STDIN_FILENO);
 
-		switch(key){			//$B%-!<H=JL!!0lHL%2!<%`;EMM(B
+		switch(key){			//キー判別　一般ゲーム仕様
 		case 'a':
 			x_speed = -1*speed_param;
 			y_speed = 0;
@@ -102,7 +102,7 @@ void Robot::begin(void)
 			break;
 		}
 		ROS_INFO_STREAM("test "<<(int)key);
-		ros::spinOnce();//$B%3!<%k%P%C%/4X?t8F$S=P$7(B
+		ros::spinOnce();//コールバック関数呼び出し
 		loop_rate.sleep();
 	}
 }
